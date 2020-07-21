@@ -1,73 +1,77 @@
 const express = require('express');
+const model = require('./hobbitModel');
 const router = express.Router();
 
-let hobbits = [
-    {
-        id: 1,
-        name: 'Samwise Gamgee'
-    },
-    {
-        id: 2,
-        name: 'Frodo Baggins'
+const validateHobbit = (req, res, next) => {
+    const { name } = req.body;
+    
+    if (name) {
+        next();
+    } else {
+        res.status(400).json({ errorMessage: 'Missing name field' });
     }
-];
+}
+
+const validateHobbitId = (req, res, next) => {
+    id = parseInt(req.params.id)
+    model.findById(id)
+    .then(hobbit => {
+        if (hobbit) {
+            req.hobbit = hobbit;
+            req.id = parseInt(req.params.id)
+            next();
+        } else {
+            res.status(404).json({ errorMessage: `Hobbit with id ${id} not found` });
+        }
+    })
+    .catch(err => {
+        res.status(500).json({ errorMessage: `Failed to find hobbit with id ${id}`});
+    });
+}
 
 router.get('/', (req, res) => {
-    res.status(200).json(hobbits);
+    model.find()
+    .then(hobbits => {
+        res.status(200).json(hobbits);
+    })
+    .catch(err => {
+        res.status(500).json({ errorMessage: 'Failed to find hobbits' });
+    });
 });
 
-router.get('/:id', (req, res) => {
-    const id = parseInt(req.params.id);
-    let found = false;
-    
-    for (let i = 0; i < hobbits.length; i++) {
-        if (hobbits[i].id === id) {
-            res.status(200).json(hobbits[i]);
-            found = true;
-        }
-    }
+router.get('/:id', validateHobbitId, (req, res) => {
+    res.status(200).json(req.hobbit);
+});
 
-    if (!found) {
-        res.status(404).json({ errorMessage: 'Hobbit not found' });
-    }
-})
-
-router.post('/', (req, res) => {
+router.post('/', validateHobbit, (req, res) => {
     const hobbit = req.body;
-    hobbits.push(hobbit)
-    res.status(201).json({ message: 'New record created successfully' });
+    model.add(hobbit)
+    .then(hobbit => {
+        res.status(200).json(hobbit);
+    })
+    .catch(err => {
+        res.status(500).json({ errorMessage: 'Failed to create hobbit' });
+    });
 });
 
-router.put('/:id', (req, res) => {
-    const hobbit = req.body;
-    const id = parseInt(req.params.id);
-    let index = -1;
-
-    for (let i = 0; i < hobbits.length; i++) {
-        if (hobbits[i].id === id) {
-            index = i;
-            break;
-        }
-    }
-
-    if (index != -1) {
-        hobbits[index] = hobbit;
-        res.status(200).json(hobbits[index]);
-    } else {
-        res.status(404).json({ errorMessage: 'Hobbit not found' });
-    }
+router.put('/:id', validateHobbitId, (req, res) => {
+    model.update(req.body, req.id)
+    .then(hobbit => {
+        res.status(200).json(hobbit);
+    })
+    .catch(err => {
+        res.status(500).json({ errorMessage: `Failed to update hobbit with id ${id}` });
+    });
 });
 
-router.delete('/:id', (req, res) => {
-    const id = parseInt(req.params.id);
-
-    for (let i = 0; i < hobbits.length; i++) {
-        if (hobbits[i].id === id) {
-            const deleted_hobbit = hobbits[i];
-            hobbits.splice(i, 1);
-            res.status(200).json(deleted_hobbit);
-        }
-    }
+router.delete('/:id', validateHobbitId, (req, res) => {
+    model.remove(req.id)
+    .then(records => {
+        res.status(200).json(req.hobbit);
+    })
+    .catch(err => {
+        res.status(500).json({ errorMessage: `Failed to delete hobbit with id ${req.id}` });
+    });
 });
 
 module.exports = router;
