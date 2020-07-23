@@ -25,7 +25,9 @@ router.post('/login', validateCredentials, async (req, res) => {
 });
 
 router.post('/register', validateCredentials, async (req, res) => {
-    const user = await userModel.add(req.body);
+    credentials = req.body;
+    credentials.password = bcrypt.hashSync(credentials.password, 14);
+    const user = await userModel.add(credentials);
     res.status(200).json(user);
 });
 
