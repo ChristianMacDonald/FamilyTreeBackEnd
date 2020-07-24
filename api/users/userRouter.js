@@ -1,6 +1,10 @@
 const express = require('express');
+const bcrypt = require('bcryptjs');
 const userModel = require('./userModel');
 const router = express.Router();
+const authMiddleware = require('../auth/authMiddleware');
+
+router.use(authMiddleware.verifyToken);
 
 const validateUser = (req, res, next) => {
     const user = req.body;
@@ -27,26 +31,44 @@ const validateUsername = async (req, res, next) => {
     }
 }
 
-router.get('/', async (req, res) => {
-    const users = await userModel.find();
-    res.status(200).json(users);
-});
+const verifyUserOwnsAccount = (req, res, next) => {
+    if (req.tokenPayload.username === req.user.username) {
+        next();
+    } else {
+        res.status(401).json({ errorMessage: 'Not authorized to access accounts of other users' });
+    }
+}
 
-router.get('/:username', validateUsername, (req, res) => {
+router.get('/:username', validateUsername, verifyUserOwnsAccount, (req, res) => {
     res.status(200).json(req.user);
 });
 
-router.post('/', validateUser, async (req, res) => {
-    const user = await userModel.add(req.user);
-    res.status(200).json(user);
+router.put('/:username/password', validateUsername, verifyUserOwnsAccount, async (req, res) => {
+    const user = await userModel.findByUsername(req.params.username);
+    
+    if (req.body.oldPassword && req.body.newPassword) {
+        if (bcrypt.compareSync(req.body.oldPassword, user.password)) {
+            const password = bcrypt.hashSync(req.body.newPassword, 14);
+            await userModel.update({ password }, req.user.id);
+            res.status(200).json({ message: 'Successfully changed password' });
+        } else {
+            res.status(400).json({ errorMessage: 'Invalid credentials' });
+        }
+    } else if (!req.body.oldPassword) {
+        res.status(400).json({ errorMessage: 'Missing oldPassword field' });
+    } else if (!req.body.newPassword) {
+        res.status(400).json({ errorMessage: 'Missing newPassword field' });
+    } else {
+        res.status(400).json({ errorMessage: 'Missing oldPassword and newPassword fields' });
+    }
 });
 
-router.put('/:username', validateUsername, async (req, res) => {
+router.put('/:username', validateUsername, verifyUserOwnsAccount, async (req, res) => {
     const user = await userModel.update(req.body, req.user.id);
     res.status(200).json(user);
 });
 
-router.delete('/:username', validateUsername, async (req, res) => {
+router.delete('/:username', validateUsername, verifyUserOwnsAccount, async (req, res) => {
     await userModel.remove(req.user.id);
     res.status(200).json(req.user);
 });
