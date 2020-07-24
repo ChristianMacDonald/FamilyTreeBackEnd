@@ -1,7 +1,8 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
-const userModel = require('./userModel');
-const { findByUsername } = require('./userModel');
+const userModel = require('../users/userModel');
+const jwt = require('jsonwebtoken');
+const secrets = require('../../config/secrets');
 
 const router = express.Router();
 
@@ -15,10 +16,27 @@ async function validateCredentials (req, res, next) {
     }
 }
 
+function generateToken(user) {
+    const payload = {
+        subject: user.id,
+        username: user.username
+    };
+
+    const options = {
+        expiresIn: '1d'
+    }
+
+    return jwt.sign(payload, secrets.jwtSecret, options);
+}
+
 router.post('/login', validateCredentials, async (req, res) => {
     const user = await userModel.findByUsername(req.body.username);
     if (bcrypt.compareSync(req.body.password, user.password)) {
-        res.status(200).json({ message: `Successfully logged in as ${user.username}` });
+        const token = generateToken(user);
+        res.status(200).json({
+            message: `Successfully logged in as ${user.username}`,
+            token: token
+        });
     } else {
         res.status(401).json({ errorMessage: 'Invalid credentials' });
     }
