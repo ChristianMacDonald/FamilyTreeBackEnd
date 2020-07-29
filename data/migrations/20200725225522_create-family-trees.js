@@ -1,14 +1,13 @@
 
 exports.up = async function(knex) {
-    await knex.raw('create extension if not exists "uuid-ossp"');
-    return knex.schema.createTable('family-trees', table => {
+    return knex.schema.createTable('family_trees', table => {
         table.uuid('id').primary().defaultTo(knex.raw('uuid_generate_v4()'));
-        table.uuid('owner-id').references('id').inTable('users');
+        table.uuid('owner_id').references('id').inTable('users');
         table.string('name').notNullable();
+        table.unique(['owner_id', 'name']);
     });
 };
 
 exports.down = async function(knex) {
-    await knex.schema.dropTableIfExists('family-trees');
-    return knex.raw('drop extension if exists "uuid-ossp"');
+    return knex.schema.dropTableIfExists('family_trees');
 };
