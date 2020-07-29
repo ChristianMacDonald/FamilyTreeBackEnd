@@ -3,8 +3,8 @@ const bcrypt = require('bcryptjs');
 const userModel = require('./userModel');
 const familyTreeModel = require('../familyTrees/familyTreeModel');
 const { verifyToken } = require('../auth/authMiddleware');
-const { validateUsername, verifyUserOwnsAccount, validateFamilyTree, validateFamilyTreeName } = require('./userMiddleware');
-
+const { validateUsername, verifyUserOwnsAccount } = require('./userMiddleware');
+const { validateFamilyTree, validateFamilyTreeName } = require('../familyTrees/familyTreeMiddlware');
 const router = express.Router();
 
 router.use(verifyToken);
