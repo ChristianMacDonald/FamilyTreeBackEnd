@@ -1,55 +1,13 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const userModel = require('./userModel');
-const familyTreesModel = require('../familyTrees/familyTreeModel');
-const authMiddleware = require('../auth/authMiddleware');
 const familyTreeModel = require('../familyTrees/familyTreeModel');
+const { verifyToken } = require('../auth/authMiddleware');
+const { validateUsername, verifyUserOwnsAccount, validateFamilyTree, validateFamilyTreeName } = require('./userMiddleware');
 
 const router = express.Router();
 
-router.use(authMiddleware.verifyToken);
-
-const validateUsername = async (req, res, next) => {
-    const username = req.params.username
-    const user = await userModel.findByUsername(username);
-
-    if (user) {
-        req.user = user;
-        next();
-    } else {
-        res.status(404).json({ errorMessage: `User with id ${id} not found` });
-    }
-}
-
-const verifyUserOwnsAccount = (req, res, next) => {
-    if (req.tokenPayload.username === req.user.username) {
-        next();
-    } else {
-        res.status(401).json({ errorMessage: 'Not authorized to access accounts of other users' });
-    }
-}
-
-const validateFamilyTree = (req, res, next) => {
-    if (req.body.name) {
-        next();
-    } else  {
-        res.status(400).json({ errorMessage: 'Missing name field' });
-    }
-}
-
-const validateFamilyTreeName = async (req, res, next) => {
-    if (req.query.name) {
-        const familyTree = await familyTreeModel.findByOwnerAndName(req.user.id, req.query.name);
-        if (familyTree) {
-            req.familyTree = familyTree;
-            next();
-        } else {
-            res.status(404).json({ errorMessage: `Family tree with owner ${req.user.id} and name ${req.query.name} not found` });
-        }
-    } else {
-        res.status(400).json({ errorMessage: 'Missing key-value pair with key name in query string' });
-    }
-}
+router.use(verifyToken);
 
 router.get('/:username', validateUsername, verifyUserOwnsAccount, (req, res) => {
     res.status(200).json(req.user);
