@@ -1,23 +1,13 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const userModel = require('./userModel');
-const router = express.Router();
+const familyTreesModel = require('../familyTrees/familyTreeModel');
 const authMiddleware = require('../auth/authMiddleware');
+const familyTreeModel = require('../familyTrees/familyTreeModel');
+
+const router = express.Router();
 
 router.use(authMiddleware.verifyToken);
-
-const validateUser = (req, res, next) => {
-    const user = req.body;
-
-    if (user.username && user.password) {
-        req.user = user;
-        next();
-    } else if (!user.username) {
-        res.status(400).json({ errorMessage: 'Missing username field' });
-    } else if (!user.password) {
-        res.status(400).json({ errorMessage: 'Missing password field' });
-    }
-}
 
 const validateUsername = async (req, res, next) => {
     const username = req.params.username
@@ -36,6 +26,28 @@ const verifyUserOwnsAccount = (req, res, next) => {
         next();
     } else {
         res.status(401).json({ errorMessage: 'Not authorized to access accounts of other users' });
+    }
+}
+
+const validateFamilyTree = (req, res, next) => {
+    if (req.body.name) {
+        next();
+    } else  {
+        res.status(400).json({ errorMessage: 'Missing name field' });
+    }
+}
+
+const validateFamilyTreeName = async (req, res, next) => {
+    if (req.query.name) {
+        const familyTree = await familyTreeModel.findByOwnerAndName(req.user.id, req.query.name);
+        if (familyTree) {
+            req.familyTree = familyTree;
+            next();
+        } else {
+            res.status(404).json({ errorMessage: `Family tree with owner ${req.user.id} and name ${req.query.name} not found` });
+        }
+    } else {
+        res.status(400).json({ errorMessage: 'Missing key-value pair with key name in query string' });
     }
 }
 
@@ -71,6 +83,43 @@ router.put('/:username', validateUsername, verifyUserOwnsAccount, async (req, re
 router.delete('/:username', validateUsername, verifyUserOwnsAccount, async (req, res) => {
     await userModel.remove(req.user.id);
     res.status(200).json(req.user);
+});
+
+router.get('/:username/family-trees', validateUsername, verifyUserOwnsAccount, async (req, res) => {
+    if (req.query.name) {
+        const familyTree = await familyTreeModel.findByOwnerAndName(req.user.id, req.query.name);
+        if (familyTree) {
+            res.status(200).json(familyTree);
+        } else {
+            res.status(404).json({ errorMessage: `Family tree with name ${req.query.name} not found` });
+        }
+    } else {
+        const familyTrees = await familyTreeModel.find();
+        res.status(200).json(familyTrees);
+    }
+});
+
+router.post('/:username/family-trees', validateUsername, verifyUserOwnsAccount, validateFamilyTree, async (req, res) => {
+    const existingFamilyTree = await familyTreeModel.findByOwnerAndName(req.user.id, req.body.name);
+    if (existingFamilyTree) {
+        res.status(400).json({ errorMessage: 'User owns a family tree with same name' });
+    } else {
+        const familyTree = await familyTreeModel.insert({
+            owner_id: req.user.id,
+            name: req.body.name
+        });
+        res.status(200).json(familyTree);
+    }
+});
+
+router.put('/:username/family-trees', validateUsername, verifyUserOwnsAccount, validateFamilyTreeName, async (req, res) => {
+    const familyTree = await familyTreeModel.update(req.body, req.familyTree.id);
+    res.status(200).json(familyTree);
+});
+
+router.delete('/:username/family-trees', validateUsername, verifyUserOwnsAccount, validateFamilyTreeName, async (req, res) => {
+    await familyTreeModel.remove(req.familyTree.id);
+    res.status(200).json(req.familyTree);
 });
 
 module.exports = router;
