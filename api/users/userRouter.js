@@ -1,13 +1,17 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
-const userModel = require('./userModel');
-const familyTreeModel = require('../familyTrees/familyTreeModel');
+
 const { verifyToken } = require('../auth/authMiddleware');
 const { validateUsername, verifyUserOwnsAccount } = require('./userMiddleware');
-const { validateFamilyTree, validateFamilyTreeName } = require('../familyTrees/familyTreeMiddlware');
+
+const userModel = require('./userModel');
+
+const familyTreeRouter = require('../familyTrees/familyTreeRouter');
+
 const router = express.Router();
 
 router.use(verifyToken);
+router.use('/:username/family-trees', familyTreeRouter);
 
 router.get('/:username', validateUsername, verifyUserOwnsAccount, (req, res) => {
     res.status(200).json(req.user);
@@ -41,43 +45,6 @@ router.put('/:username', validateUsername, verifyUserOwnsAccount, async (req, re
 router.delete('/:username', validateUsername, verifyUserOwnsAccount, async (req, res) => {
     await userModel.remove(req.user.id);
     res.status(200).json(req.user);
-});
-
-router.get('/:username/family-trees', validateUsername, verifyUserOwnsAccount, async (req, res) => {
-    if (req.query.name) {
-        const familyTree = await familyTreeModel.findByOwnerAndName(req.user.id, req.query.name);
-        if (familyTree) {
-            res.status(200).json(familyTree);
-        } else {
-            res.status(404).json({ errorMessage: `Family tree with name ${req.query.name} not found` });
-        }
-    } else {
-        const familyTrees = await familyTreeModel.find();
-        res.status(200).json(familyTrees);
-    }
-});
-
-router.post('/:username/family-trees', validateUsername, verifyUserOwnsAccount, validateFamilyTree, async (req, res) => {
-    const existingFamilyTree = await familyTreeModel.findByOwnerAndName(req.user.id, req.body.name);
-    if (existingFamilyTree) {
-        res.status(400).json({ errorMessage: 'User owns a family tree with same name' });
-    } else {
-        const familyTree = await familyTreeModel.insert({
-            owner_id: req.user.id,
-            name: req.body.name
-        });
-        res.status(200).json(familyTree);
-    }
-});
-
-router.put('/:username/family-trees', validateUsername, verifyUserOwnsAccount, validateFamilyTreeName, async (req, res) => {
-    const familyTree = await familyTreeModel.update(req.body, req.familyTree.id);
-    res.status(200).json(familyTree);
-});
-
-router.delete('/:username/family-trees', validateUsername, verifyUserOwnsAccount, validateFamilyTreeName, async (req, res) => {
-    await familyTreeModel.remove(req.familyTree.id);
-    res.status(200).json(req.familyTree);
 });
 
 module.exports = router;
