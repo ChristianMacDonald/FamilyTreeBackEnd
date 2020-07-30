@@ -5,19 +5,19 @@ function find() {
 }
 
 function findById(id) {
-    return db('family_members').where({ id });
+    return db('family_members').where({ id }).first();
 }
 
-function findByTreeId(tree_id) {
-    return db('family_members').where({ tree_id });
+function findByTreeId(family_tree_id) {
+    return db('family_members').where({ family_tree_id });
 }
 
-function insert(tree) {
-    ids = db('family_members').insert(tree).returning('id');
+async function insert(tree) {
+    const ids = await db('family_members').insert(tree).returning('id');
     return findById(ids[0]);
 }
 
-function update(changes, id) {
+async function update(changes, id) {
     await db('family_members').where({ id }).update(changes);
     return findById(id);
 }
