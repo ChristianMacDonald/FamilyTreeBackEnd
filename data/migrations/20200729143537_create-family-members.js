@@ -9,6 +9,18 @@ exports.up = function(knex) {
         .inTable('family_trees')
         .onUpdate('CASCADE')
         .onDelete('CASCADE');
+        table.integer('mother_id')
+        .unsigned()
+        .references('id')
+        .inTable('family_members')
+        .onUpdate('CASCADE')
+        .onDelete('CASCADE');
+        table.integer('father_id')
+        .unsigned()
+        .references('id')
+        .inTable('family_members')
+        .onUpdate('CASCADE')
+        .onDelete('CASCADE');
         table.string('first_name');
         table.string('last_name');
         table.string('suffix');
