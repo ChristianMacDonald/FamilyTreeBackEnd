@@ -1,14 +1,12 @@
 
-exports.up = async function(knex) {
-    await knex.raw('create extension if not exists "uuid-ossp"');
+exports.up = function(knex) {
     return knex.schema.createTable('users', table => {
-        table.uuid('id').primary().defaultTo(knex.raw('uuid_generate_v4()'));
+        table.increments('id').primary();
         table.string('username').unique().notNullable();
         table.string('password').notNullable();
     });
 };
 
-exports.down = async function(knex) {
-    await knex.schema.dropTableIfExists('users');
-    return knex.raw('drop extension if exists "uuid-ossp"');
+exports.down = function(knex) {
+    return knex.schema.dropTableIfExists('users');
 };
