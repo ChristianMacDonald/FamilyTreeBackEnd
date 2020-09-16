@@ -12,7 +12,7 @@ router.use(verifyUserOwnsAccount);
 router.use('/:familyTreeId/family-members', familyMemberRouter);
 
 router.get('/', async (req, res) => {
-    const familyTrees = await familyTreeModel.find();
+    const familyTrees = await familyTreeModel.findByOwner(req.user.id);
     res.status(200).json(familyTrees);
 });
 
