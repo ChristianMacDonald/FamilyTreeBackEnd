@@ -1,23 +1,23 @@
 const db = require('../../data/db');
 
 function find() {
-    return db('family_trees');
+    return db('family_trees').join('users', 'family_trees.owner_id', '=', 'users.id').select('family_trees.id', 'users.username as owner', 'family_trees.name');
 }
 
 function findById(id) {
-    return db('family_trees').where({ id }).first();
+    return db('family_trees').join('users', 'family_trees.owner_id', '=', 'users.id').where({ id }).select('family_trees.id', 'users.username as owner', 'family_trees.name').first();
 }
 
 function findByName(name) {
-    return db('family_trees').where({ name });
+    return db('family_trees').join('users', 'family_trees.owner_id', '=', 'users.id').where({ name }).select('family_trees.id', 'users.username as owner', 'family_trees.name');
 }
 
 function findByOwner(owner_id) {
-    return db('family_trees').where({ owner_id });
+    return db('family_trees').join('users', 'family_trees.owner_id', '=', 'users.id').where({ owner_id }).select('family_trees.id', 'users.username as owner', 'family_trees.name');
 }
 
 function findByOwnerAndName(owner_id, name) {
-    return db('family_trees').where({ owner_id, name }).first();
+    return db('family_trees').join('users', 'family_trees.owner_id', '=', 'users.id').where({ owner_id, name }).select('family_trees.id', 'users.username as owner', 'family_trees.name').first();
 }
 
 async function insert(family_tree) {
