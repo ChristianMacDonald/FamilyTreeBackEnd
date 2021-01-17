@@ -5,7 +5,7 @@ function find() {
 }
 
 function findById(id) {
-    return db('family_trees').join('users', 'family_trees.owner_id', '=', 'users.id').where({ id }).select('family_trees.id', 'users.username as owner', 'family_trees.name').first();
+    return db('family_trees').join('users', 'family_trees.owner_id', '=', 'users.id').where({ 'family_trees.id': id }).select('family_trees.id', 'users.username as owner', 'family_trees.name').first();
 }
 
 function findByName(name) {
