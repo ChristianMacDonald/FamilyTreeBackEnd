@@ -12,8 +12,12 @@ router.use(verifyUserOwnsAccount);
 router.use('/:familyTreeId/family-members', familyMemberRouter);
 
 router.get('/', async (req, res) => {
-    const familyTrees = await familyTreeModel.findByOwner(req.user.id);
-    res.status(200).json(familyTrees);
+    try {
+        const familyTrees = await familyTreeModel.findByOwner(req.user.id);
+        res.status(200).json(familyTrees);
+    } catch {
+        res.status(500).json({ errorMessage: 'Could not get family trees' });
+    }
 });
 
 router.get('/:familyTreeId', validateFamilyTreeId, (req, res) => {
@@ -21,18 +25,30 @@ router.get('/:familyTreeId', validateFamilyTreeId, (req, res) => {
 });
 
 router.post('/', validateFamilyTree, async (req, res) => {
-    const familyTree = await familyTreeModel.insert({ owner_id: req.user.id, name: req.body.name });
-    res.status(200).json(familyTree);
+    try {
+        const familyTree = await familyTreeModel.insert({ owner_id: req.user.id, name: req.body.name });
+        res.status(200).json(familyTree);
+    } catch {
+        res.status(500).json({ errorMessage: 'Could not create family tree'});
+    }
 });
 
 router.put('/:familyTreeId', validateFamilyTreeId, async (req, res) => {
-    const familyTree = await familyTreeModel.update(req.body, req.familyTree.id);
-    res.status(200).json(familyTree);
+    try {    
+        const familyTree = await familyTreeModel.update(req.body, req.familyTree.id);
+        res.status(200).json(familyTree);
+    } catch {
+        res.status(500).json({ errorMessage: 'Could not update family tree'});
+    }
 });
 
 router.delete('/:familyTreeId', validateFamilyTreeId, async (req, res) => {
-    await familyTreeModel.remove(req.familyTree.id);
-    res.status(200).json(req.familyTree);
+    try {
+        await familyTreeModel.remove(req.familyTree.id);
+        res.status(200).json(req.familyTree);
+    } catch {
+        res.status(500).json({ errorMessage: 'Could not delete family tree' });
+    }
 });
 
 module.exports = router;
