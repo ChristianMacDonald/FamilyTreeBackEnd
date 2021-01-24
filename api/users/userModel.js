@@ -9,7 +9,7 @@ function findById(id) {
 }
 
 function findByUsername(username) {
-    return db('users').where({ username }).select('id', 'username').first();
+    return db('users').where({ username }).first();
 }
 
 async function add(user) {
