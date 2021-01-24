@@ -14,7 +14,7 @@ router.use(verifyToken);
 router.use('/:username/family-trees', familyTreeRouter);
 
 router.get('/:username', validateUsername, verifyUserOwnsAccount, (req, res) => {
-    res.status(200).json(req.user);
+    res.status(200).json({ id: req.user.id, username: req.user.username });
 });
 
 router.put('/:username/password', validateUsername, verifyUserOwnsAccount, async (req, res) => {
