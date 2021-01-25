@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const userModel = require('../users/userModel');
 const jwt = require('jsonwebtoken');
 const secrets = require('../../config/secrets');
+const { jwtSecret } = require('../../config/secrets');
 
 const router = express.Router();
 
@@ -47,6 +48,15 @@ router.post('/register', validateCredentials, async (req, res) => {
     credentials.password = bcrypt.hashSync(credentials.password, 14);
     const user = await userModel.add(credentials);
     res.status(200).json({ message: `Successfully created user ${user.username}` });
+});
+
+router.post('/token', (req, res) => {
+    try {
+        const payload = jwt.verify(req.body.token, secrets.jwtSecret);
+        res.status(200).json(payload);
+    } catch (err) {
+        res.status(400).json({ message: 'Invalid token' });
+    }
 });
 
 module.exports = router;
